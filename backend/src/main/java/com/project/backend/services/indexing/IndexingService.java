@@ -91,23 +91,20 @@ public class IndexingService {
         int totalChunks = 0;
 
         for (String path : filePaths) {
+            List<Document> chunks;
             try {
                 String content = gitHubApiClient.getFileContent(
                         token, repo.getOwner(), repo.getName(), path);
-                List<Document> chunks = codeChunker.chunkFile(repoId.toString(), path, content);
-                batch.addAll(chunks);
-                totalChunks += chunks.size();
-                if (batch.size() >= VECTOR_BATCH_SIZE) {
-                    try {
-                        vectorStore.add(batch);
-                    } catch (Exception vex) {
-                        log.warn("Vector store add failed for batch in {}: {}", repo.getFullName(), vex.getMessage());
-                    } finally {
-                        batch.clear();
-                    }
-                }
+                chunks = codeChunker.chunkFile(repoId.toString(), path, content);
             } catch (Exception ex) {
                 log.warn("Skipping file {} in {}: {}", path, repo.getFullName(), ex.getMessage());
+                chunks = List.of();
+            }
+
+            batch.addAll(chunks);
+            totalChunks += chunks.size();
+            if (batch.size() >= VECTOR_BATCH_SIZE) {
+                vectorStore.add(batch);
                 batch.clear();
             }
 
@@ -119,13 +116,8 @@ public class IndexingService {
         }
 
         if (!batch.isEmpty()) {
-            try {
-                vectorStore.add(batch);
-            } catch (Exception vex) {
-                log.warn("Vector store add failed for final batch in {}: {}", repo.getFullName(), vex.getMessage());
-            } finally {
-                batch.clear();
-            }
+            vectorStore.add(batch);
+            batch.clear();
         }
 
         markReady(repoId, filePaths.size(), processed, totalChunks, repo.getFullName());
@@ -151,12 +143,8 @@ public class IndexingService {
     }
 
      private void deleteExistingVectors(String repoId) {
-        try {
-            var filter = new FilterExpressionBuilder().eq(RagSettings.METADATA_REPO_ID, repoId).build();
-            vectorStore.delete(filter);
-        } catch (Exception ex) {
-            log.warn("Could not delete existing vectors for repo {}: {}", repoId, ex.getMessage());
-        }
+        var filter = new FilterExpressionBuilder().eq(RagSettings.METADATA_REPO_ID, repoId).build();
+        vectorStore.delete(filter);
     };
 
     @Transactional
