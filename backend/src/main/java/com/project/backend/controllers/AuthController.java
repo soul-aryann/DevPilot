@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.web.csrf.CsrfToken;
 
 import com.project.backend.dto.UserResponse;
 import com.project.backend.entity.User;
@@ -22,6 +23,11 @@ public class AuthController {
     @GetMapping("/login-url")
     public Map<String, String> loginUrl() {
         return Map.of("url", "/oauth2/authorization/github");
+    }
+
+    @GetMapping("/csrf")
+    public Map<String, String> csrf(CsrfToken csrfToken) {
+        return Map.of("token", csrfToken.getToken());
     }
 
 
