@@ -86,9 +86,14 @@ public class IndexingService {
 
         Map<String, Object> tree = gitHubApiClient.getRepoTree(
                 token, repo.getOwner(), repo.getName(), repo.getDefaultBranch());
+        validateTree(tree);
         validateIndexLimits(tree);
-        deleteExistingVectors(repoId.toString());
         List<String> filePaths = listIndexableFiles(tree);
+        if (filePaths.isEmpty()) {
+            throw new IllegalStateException("Repository has no eligible source files to index");
+        }
+
+        deleteExistingVectors(repoId.toString());
 
         updateProgress(repoId, filePaths.size(), 0, 0, IndexStatus.INDEXING, null);
 
@@ -97,14 +102,22 @@ public class IndexingService {
         int totalChunks = 0;
 
         for (String path : filePaths) {
+            String content;
+            try {
+                content = gitHubApiClient.getFileContent(
+                        token, repo.getOwner(), repo.getName(), path);
+            } catch (Exception ex) {
+                throw new IllegalStateException("Failed to fetch source file " + path, ex);
+            }
+            if (content == null) {
+                throw new IllegalStateException("GitHub returned no content for source file " + path);
+            }
+
             List<Document> chunks;
             try {
-                String content = gitHubApiClient.getFileContent(
-                        token, repo.getOwner(), repo.getName(), path);
                 chunks = codeChunker.chunkFile(repoId.toString(), path, content);
             } catch (Exception ex) {
-                log.warn("Skipping file {} in {}: {}", path, repo.getFullName(), ex.getMessage());
-                chunks = List.of();
+                throw new IllegalStateException("Failed to chunk source file " + path, ex);
             }
 
             batch.addAll(chunks);
@@ -126,7 +139,20 @@ public class IndexingService {
             batch.clear();
         }
 
+        if (totalChunks == 0) {
+            throw new IllegalStateException("No code chunks were produced; repository cannot be marked ready");
+        }
+
         markReady(repoId, filePaths.size(), processed, totalChunks, repo.getFullName());
+    }
+
+    private void validateTree(Map<String, Object> tree) {
+        if (tree == null || !(tree.get("tree") instanceof List<?>)) {
+            throw new IllegalStateException("GitHub returned an invalid repository tree");
+        }
+        if (Boolean.TRUE.equals(tree.get("truncated"))) {
+            throw new IllegalStateException("GitHub truncated the repository tree; refusing to mark a partial index ready");
+        }
     }
 
 
