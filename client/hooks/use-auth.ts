@@ -10,15 +10,7 @@ import { queryKeys } from "@/lib/query-keys";
 export function useCurrentUser(){
     return useQuery({
         queryKey: queryKeys.auth.me(),
-        queryFn: async()=>{
-            try {
-                const user = await api.me();
-                return user;
-            } catch (error) {
-                throw error;
-            }
-
-        },
+        queryFn: () => api.me(),
          staleTime: 5 * 60 * 1000,
     retry: false,
     })

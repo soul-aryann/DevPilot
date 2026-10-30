@@ -93,7 +93,7 @@ export async function getCsrfToken(): Promise<string> {
   return csrfTokenPromise;
 }
 
-async function parseError(res: Response): Promise<string> {
+export async function parseApiError(res: Response): Promise<string> {
   try {
     const data = await res.json();
     return data.message ?? data.error ?? res.statusText;
@@ -121,7 +121,7 @@ export async function apiFetch<T>(
   });
 
   if (!res.ok) {
-    throw new ApiError(res.status, await parseError(res));
+    throw new ApiError(res.status, await parseApiError(res));
   }
 
   if (res.status === 204) {

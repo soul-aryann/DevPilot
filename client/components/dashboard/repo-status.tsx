@@ -1,4 +1,4 @@
-import type { IndexStatus, Repository } from "@/lib/api";
+import type { IndexStatus } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
@@ -14,7 +14,6 @@ export function indexStatusLabel(status: IndexStatus) {
       return "Not indexed";
   }
 }
-
 export function IndexStatusBadge({
   status,
   className,
@@ -38,35 +37,5 @@ export function IndexStatusBadge({
       )}
       {indexStatusLabel(status)}
     </Badge>
-  );
-}
-
-export function languageColor(language: string | null) {
-  const map: Record<string, string> = {
-    TypeScript: "bg-sky-500",
-    JavaScript: "bg-amber-400",
-    Java: "bg-orange-500",
-    Python: "bg-emerald-500",
-    Go: "bg-cyan-500",
-    Rust: "bg-orange-700",
-    Kotlin: "bg-violet-500",
-  };
-  return map[language ?? ""] ?? "bg-muted-foreground";
-}
-
-export function RepoMeta({ repo }: { repo: Repository }) {
-  return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-      {repo.language && (
-        <span className="inline-flex items-center gap-1.5">
-          <span
-            className={cn("size-2 rounded-full", languageColor(repo.language))}
-          />
-          {repo.language}
-        </span>
-      )}
-      <span>{repo.defaultBranch}</span>
-      {repo.chunkCount > 0 && <span>{repo.chunkCount.toLocaleString()} chunks</span>}
-    </div>
   );
 }

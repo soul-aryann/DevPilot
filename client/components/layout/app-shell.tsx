@@ -9,7 +9,6 @@ import { DevPilotIcon } from "@/components/icons/devpilot-icon";
 import { ModeToggle } from "@/components/ui/mode-toggle";
 import { useCurrentUser, useLogout } from "@/hooks/use-auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -208,7 +207,6 @@ export function AppShell({
     </SidebarProvider>
   );
 }
-
 export function BrandMark({ className }: { className?: string }) {
   return (
     <div
@@ -220,21 +218,5 @@ export function BrandMark({ className }: { className?: string }) {
       <DevPilotIcon className="size-8 rounded-[10px]" />
       <span className="font-heading text-[1.05rem] leading-none">DevPilot</span>
     </div>
-  );
-}
-
-export function GhostButtonLink({
-  href,
-  children,
-  className,
-}: {
-  href: string;
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <Button variant="ghost" size="sm" className={className} render={<Link href={href} />}>
-      {children}
-    </Button>
   );
 }
