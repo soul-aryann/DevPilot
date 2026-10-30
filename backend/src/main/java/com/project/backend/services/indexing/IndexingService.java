@@ -45,6 +45,12 @@ public class IndexingService {
     @Value("${app.indexing.max-file-bytes:102400}")
     private long maxFileBytes;
 
+    @Value("${app.indexing.max-files:2000}")
+    private int maxFiles;
+
+    @Value("${app.indexing.max-total-bytes:52428800}")
+    private long maxTotalBytes;
+
     public Repository startIndexing(UUID repoId, UUID userId) {
         Repository repo = repositoryRepository.findByIdAndUserId(repoId, userId)
                 .orElseThrow(() -> new NotFoundException("Repository not found"));
@@ -78,10 +84,10 @@ public class IndexingService {
                 .orElseThrow(() -> new NotFoundException("Repository not found"));
         String token = userService.decryptAccessToken(userService.requiredById(userId));
 
-        deleteExistingVectors(repoId.toString());
-
         Map<String, Object> tree = gitHubApiClient.getRepoTree(
                 token, repo.getOwner(), repo.getName(), repo.getDefaultBranch());
+        validateIndexLimits(tree);
+        deleteExistingVectors(repoId.toString());
         List<String> filePaths = listIndexableFiles(tree);
 
         updateProgress(repoId, filePaths.size(), 0, 0, IndexStatus.INDEXING, null);
@@ -140,6 +146,26 @@ public class IndexingService {
                 })
                 .map(entry -> String.valueOf(entry.get("path")))
                 .toList();
+    }
+
+    @SuppressWarnings("unchecked")
+    private void validateIndexLimits(Map<String, Object> tree) {
+        if (tree == null || tree.get("tree") == null) return;
+
+        List<Map<String, Object>> entries = (List<Map<String, Object>>) tree.get("tree");
+        long totalBytes = 0;
+        int fileCount = 0;
+        for (Map<String, Object> entry : entries) {
+            if (!"blob".equals(String.valueOf(entry.get("type")))) continue;
+            String path = String.valueOf(entry.get("path"));
+            long size = entry.get("size") instanceof Number n ? n.longValue() : 0L;
+            if (!fileFilter.isEligible(path, size, maxFileBytes)) continue;
+            fileCount++;
+            totalBytes += size;
+            if (fileCount > maxFiles || totalBytes > maxTotalBytes) {
+                throw new BadRequestException("Repository exceeds indexing limits");
+            }
+        }
     }
 
      private void deleteExistingVectors(String repoId) {
