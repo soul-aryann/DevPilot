@@ -53,7 +53,7 @@ export default function HomePage() {
               <ArrowRight className="size-4" />
             </a>
             <Link
-              href="/login"
+              href="#how-it-works"
               className={cn(buttonVariants({ variant: "outline", size: "lg" }))}
             >
               See how it works
@@ -61,35 +61,49 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="grid gap-4 md:grid-cols-3">
-          {[
-            {
-              title: "Connect GitHub",
-              body: "OAuth with repo scope for public and private repositories.",
-              icon: FolderGit2,
-            },
-            {
-              title: "Index with RAG",
-              body: "Chunk and embed your code into Postgres + pgvector.",
-              icon: Sparkles,
-            },
-            {
-              title: "Ask anything",
-              body: "Get grounded answers with clickable source citations.",
-              icon: MessageSquareCode,
-            },
-          ].map((item) => (
-            <div
-              key={item.title}
-              className="rounded-2xl border bg-card/80 p-5 shadow-xs backdrop-blur"
-            >
-              <div className="mb-4 flex size-10 items-center justify-center rounded-xl bg-muted">
-                <item.icon className="size-5 text-foreground" />
+        <section
+          id="how-it-works"
+          aria-labelledby="how-it-works-heading"
+          className="scroll-mt-8 space-y-4"
+        >
+          <h2
+            id="how-it-works-heading"
+            className="text-center text-2xl font-semibold tracking-tight"
+          >
+            How it works
+          </h2>
+          <div className="grid gap-4 md:grid-cols-3">
+            {[
+              {
+                title: "Connect GitHub",
+                body: "OAuth with repo scope for public and private repositories.",
+                icon: FolderGit2,
+              },
+              {
+                title: "Index with RAG",
+                body: "Chunk and embed your code into Postgres + pgvector.",
+                icon: Sparkles,
+              },
+              {
+                title: "Ask anything",
+                body: "Get grounded answers with clickable source citations.",
+                icon: MessageSquareCode,
+              },
+            ].map((item) => (
+              <div
+                key={item.title}
+                className="rounded-2xl border bg-card/80 p-5 shadow-xs backdrop-blur"
+              >
+                <div className="mb-4 flex size-10 items-center justify-center rounded-xl bg-muted">
+                  <item.icon className="size-5 text-foreground" />
+                </div>
+                <h3 className="font-medium">{item.title}</h3>
+                <p className="mt-1.5 text-sm text-muted-foreground">
+                  {item.body}
+                </p>
               </div>
-              <h2 className="font-medium">{item.title}</h2>
-              <p className="mt-1.5 text-sm text-muted-foreground">{item.body}</p>
-            </div>
-          ))}
+            ))}
+          </div>
         </section>
       </main>
     </div>
