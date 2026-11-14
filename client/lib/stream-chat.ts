@@ -11,7 +11,6 @@ export type StreamChatHandlers = {
   onToken?: (token: string) => void;
   onAssistantMessage?: (message: ChatMessage) => void;
   onDone?: () => void;
-  onError?: (error: Error) => void;
   signal?: AbortSignal;
 };
 
@@ -45,6 +44,7 @@ export async function streamChatMessage(
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
+  let receivedAssistantMessage = false;
 
   while (true) {
     const { done, value } = await reader.read();
@@ -78,16 +78,21 @@ export async function streamChatMessage(
         } else if (event === "user_message") {
           handlers.onUserMessage?.(JSON.parse(data) as ChatMessage);
         } else if (event === "assistant_message") {
+          receivedAssistantMessage = true;
           handlers.onAssistantMessage?.(JSON.parse(data) as ChatMessage);
         } else if (event === "done") {
           handlers.onDone?.();
+        } else if (event === "error") {
+          throw new Error(data);
         }
       } catch (err) {
-        handlers.onError?.(
-          err instanceof Error ? err : new Error("Failed to parse SSE event")
-        );
+        throw err instanceof Error ? err : new Error("Failed to parse SSE event");
       }
     }
+  }
+
+  if (!receivedAssistantMessage) {
+    throw new Error("The chat stream ended before an answer was received.");
   }
 
   handlers.onDone?.();
